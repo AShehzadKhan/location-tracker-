@@ -32,7 +32,6 @@
             max-width: 550px;
             width: 100%;
             box-shadow: 0 30px 45px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(120, 200, 255, 0.1) inset;
-            transition: all 0.2s ease;
         }
 
         h1 {
@@ -70,6 +69,58 @@
             padding-left: 1rem;
             font-weight: 400;
             letter-spacing: 0.3px;
+        }
+
+        /* city banner */
+        .city-banner {
+            background: linear-gradient(135deg, #123b5e 0%, #0a2237 100%);
+            border-radius: 1.5rem;
+            padding: 1.4rem 1.6rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #2e6a9e;
+            box-shadow: 0 8px 20px -8px rgba(30, 144, 255, 0.4), inset 0 1px 0 rgba(160, 210, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .city-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(30, 144, 255, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .city-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #7fb5e6;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .city-name {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            text-shadow: 0 2px 12px rgba(30, 144, 255, 0.4);
+            word-break: break-word;
+        }
+
+        .city-detail {
+            font-size: 0.88rem;
+            color: #a3c4e3;
+            margin-top: 0.5rem;
+            font-weight: 400;
         }
 
         .location-panel {
@@ -136,23 +187,9 @@
             margin-top: 0.5rem;
         }
 
-        .status-badge.loading {
-            background: #253b4b;
-            color: #b0c8dd;
-            border-color: #3e5e7a;
-        }
-
-        .status-badge.error {
-            background: #3f1e1e;
-            color: #ffb0b0;
-            border-color: #a04545;
-        }
-
-        .status-badge.success {
-            background: #133e2e;
-            color: #a0f0cf;
-            border-color: #2b8b5c;
-        }
+        .status-badge.loading { background: #253b4b; color: #b0c8dd; border-color: #3e5e7a; }
+        .status-badge.error { background: #3f1e1e; color: #ffb0b0; border-color: #a04545; }
+        .status-badge.success { background: #133e2e; color: #a0f0cf; border-color: #2b8b5c; }
 
         .button-group {
             display: flex;
@@ -199,9 +236,7 @@
             box-shadow: 0 4px 0 #0a1622, 0 4px 10px rgba(0, 0, 0, 0.4);
         }
 
-        .btn.secondary:hover {
-            background: #1f405a;
-        }
+        .btn.secondary:hover { background: #1f405a; }
 
         .btn:disabled {
             opacity: 0.5;
@@ -211,10 +246,7 @@
             cursor: not-allowed;
         }
 
-        .btn-icon {
-            font-size: 1.2rem;
-            line-height: 1;
-        }
+        .btn-icon { font-size: 1.2rem; line-height: 1; }
 
         .message-box {
             background: #08212e;
@@ -228,12 +260,9 @@
             border-left: 6px solid #1e90ff;
             margin-top: 1.2rem;
             word-break: break-word;
-            transition: all 0.2s;
         }
 
-        .message-box.hidden {
-            display: none;
-        }
+        .message-box.hidden { display: none; }
 
         .coords-extra {
             display: flex;
@@ -241,7 +270,6 @@
             font-size: 0.9rem;
             color: #7fa5c7;
             margin-top: 0.8rem;
-            padding: 0.3rem 0.4rem;
             background: #0b1f2e;
             border-radius: 30px;
             padding: 0.6rem 1rem;
@@ -255,8 +283,21 @@
             letter-spacing: 0.3px;
         }
 
-        .mono {
-            font-family: 'JetBrains Mono', monospace;
+        /* spinner for city loading */
+        .city-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(160, 210, 255, 0.3);
+            border-top-color: #4da6ff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -265,9 +306,16 @@
         <h1>
             <span></span> location tracker
         </h1>
-        <div class="subhead">live geolocation · latitude · longitude · accuracy</div>
+        <div class="subhead">live geolocation · city · coordinates · accuracy</div>
 
-        <!-- main coordinates display -->
+        <!-- CITY BANNER -->
+        <div class="city-banner">
+            <div class="city-label">📌 current city</div>
+            <div class="city-name" id="cityName">—</div>
+            <div class="city-detail" id="cityDetail">waiting for location...</div>
+        </div>
+
+        <!-- coordinates -->
         <div class="location-panel">
             <div class="coord-row">
                 <span class="label">📍 Latitude</span>
@@ -283,14 +331,12 @@
             </div>
         </div>
 
-        <!-- extra info row (altitude, heading, speed) -->
         <div class="coords-extra" id="extraInfo">
             <span>⛰️ alt: —</span>
             <span>🧭 head: —</span>
             <span>🏃 speed: —</span>
         </div>
 
-        <!-- status indicator + last update -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem;">
             <div class="status-badge" id="statusBadge">
                 <span>⏳</span> ready
@@ -300,7 +346,6 @@
             </div>
         </div>
 
-        <!-- buttons -->
         <div class="button-group">
             <button class="btn" id="trackBtn">
                 <span class="btn-icon">📡</span> Track location
@@ -310,30 +355,222 @@
             </button>
         </div>
 
-        <!-- optional message / error box -->
         <div class="message-box hidden" id="messageBox">
             <span>ℹ️</span> <span id="messageText"></span>
         </div>
 
         <div class="footer-note">
-            geolocation API · real-time updates
+            geolocation API · reverse geocoding via OpenStreetMap
         </div>
     </div>
 
     <script>
         (function() {
             // DOM elements
+            const cityNameEl = document.getElementById('cityName');
+            const cityDetailEl = document.getElementById('cityDetail');
             const latEl = document.getElementById('latValue');
             const lngEl = document.getElementById('lngValue');
             const accEl = document.getElementById('accValue');
             const extraInfo = document.getElementById('extraInfo');
 
             const statusBadge = document.getElementById('statusBadge');
-            const updateBadge = document.getElementById('updateBadge');
             const lastUpdateSpan = document.getElementById('lastUpdate');
 
             const trackBtn = document.getElementById('trackBtn');
             const stopBtn = document.getElementById('stopBtn');
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+
+            let watchId = null;
+
+            // track last lookup to avoid hammering the API
+            let lastLookup = { lat: null, lng: null, time: 0 };
+            let lastCityKey = '';
+
+            // ---- helpers ----
+            function formatCoord(v) {
+                return (v !== null && v !== undefined) ? v.toFixed(6) : '—';
+            }
+
+            function showMessage(text, isError = false, isSuccess = false) {
+                messageBox.classList.remove('hidden');
+                messageText.textContent = text;
+                messageBox.style.borderLeftColor = isError ? '#ff6b6b' : (isSuccess ? '#4cd964' : '#1e90ff');
+            }
+
+            function hideMessage() {
+                messageBox.classList.add('hidden');
+            }
+
+            function setStatus(text, type = 'default') {
+                const icons = { default: '⏳', loading: '📡', error: '⚠️', success: '✅' };
+                const icon = icons[type] || icons.default;
+                statusBadge.innerHTML = `<span>${icon}</span> ${text}`;
+                statusBadge.className = 'status-badge';
+                if (type === 'loading') statusBadge.classList.add('loading');
+                if (type === 'error') statusBadge.classList.add('error');
+                if (type === 'success') statusBadge.classList.add('success');
+            }
+
+            function setLastUpdate() {
+                const now = new Date();
+                lastUpdateSpan.textContent = now.toLocaleTimeString([], {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+            }
+
+            // ---- CITY LOOKUP (reverse geocoding) ----
+            async function lookupCity(lat, lng) {
+                // avoid repeated calls for same spot within 30s
+                const now = Date.now();
+                const samePlace = lastLookup.lat !== null &&
+                                  Math.abs(lastLookup.lat - lat) < 0.0005 &&
+                                  Math.abs(lastLookup.lng - lng) < 0.0005;
+                if (samePlace && (now - lastLookup.time) < 30000) {
+                    return;
+                }
+                lastLookup = { lat, lng, time: now };
+
+                // show loading state in the banner
+                cityNameEl.innerHTML = '<span class="city-spinner"></span> locating city...';
+                cityDetailEl.textContent = 'reverse geocoding...';
+
+                try {
+                    // Nominatim requires a descriptive User-Agent / Referer for heavy use.
+                    // For a demo, browser default is usually OK, but we include a proper one.
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+                    const resp = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!resp.ok) throw new Error('Network response was not ok');
+                    const data = await resp.json();
+
+                    if (!data || !data.address) {
+                        cityNameEl.textContent = 'Unknown location';
+                        cityDetailEl.textContent = 'no address data returned';
+                        return;
+                    }
+
+                    const a = data.address;
+
+                    // Try to find the best city name in order of preference
+                    const city =
+                        a.city ||
+                        a.town ||
+                        a.village ||
+                        a.municipality ||
+                        a.county ||
+                        a.state_district ||
+                        a.state ||
+                        a.region ||
+                        a.country ||
+                        'Unknown';
+
+                    // build a friendly sub-detail: region / country
+                    const parts = [];
+                    if (a.state && a.state !== city) parts.push(a.state);
+                    if (a.country) parts.push(a.country);
+                    const detail = parts.length ? parts.join(' · ') : (data.display_name || '');
+
+                    cityNameEl.textContent = city;
+                    cityDetailEl.textContent = detail;
+
+                    // update document title too (nice touch)
+                    document.title = `${city} · location tracker`;
+
+                    lastCityKey = city;
+
+                } catch (err) {
+                    console.warn('City lookup failed:', err);
+                    cityNameEl.textContent = 'City unavailable';
+                    cityDetailEl.textContent = 'could not fetch location name';
+                }
+            }
+
+            // ---- POSITION HANDLER ----
+            function updatePosition(position) {
+                const coords = position.coords;
+
+                latEl.textContent = formatCoord(coords.latitude);
+                lngEl.textContent = formatCoord(coords.longitude);
+                accEl.textContent = coords.accuracy ? `${coords.accuracy.toFixed(1)} m` : '—';
+
+                const altitude = (coords.altitude != null) ? `${coords.altitude.toFixed(1)} m` : '—';
+                const heading  = (coords.heading  != null) ? `${coords.heading.toFixed(1)}°`   : '—';
+                const speed    = (coords.speed    != null) ? `${(coords.speed * 3.6).toFixed(1)} km/h` : '—';
+
+                extraInfo.innerHTML = `
+                    <span>⛰️ alt: ${altitude}</span>
+                    <span>🧭 head: ${heading}</span>
+                    <span>🏃 speed: ${speed}</span>
+                `;
+
+                setLastUpdate();
+                setStatus('active', 'success');
+                hideMessage();
+
+                // fire off city lookup (async, non-blocking)
+                lookupCity(coords.latitude, coords.longitude);
+            }
+
+            function handlePositionError(error) {
+                let errorMsg = '';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg = 'User denied the request for geolocation.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg = 'Location information is unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg = 'The request to get user location timed out.';
+                        break;
+                    default:
+                        errorMsg = 'An unknown error occurred.';
+                }
+
+                setStatus('error', 'error');
+                showMessage(`❌ ${errorMsg}`, true);
+
+                if (error.code === error.PERMISSION_DENIED && watchId !== null) {
+                    stopTracking();
+                    showMessage('❌ Permission denied. Tracking stopped.', true);
+                }
+            }
+
+            // ---- START / STOP ----
+            function startTracking() {
+                if (!navigator.geolocation) {
+                    setStatus('unsupported', 'error');
+                    showMessage('Geolocation is not supported by your browser.', true);
+                    return;
+                }
+
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+
+                setStatus('locating...', 'loading');
+                hideMessage();
+                trackBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                cityNameEl.innerHTML = '<span class="city-spinner"></span> waiting for GPS...';
+                cityDetailEl.textContent = 'acquiring location signal...';
+
+                watchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        updatePosition(pos);
+                        trackBtn.disabled = true;
+                        stopBtn.disabled = false;
+                    },
+                    (err) => {
+        ');
             const messageBox = document.getElementById('messageBox');
             const messageText = document.getElementById('messageText');
 

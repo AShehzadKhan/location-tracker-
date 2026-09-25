@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>simple location tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0b1a2e 0%, #1b2f45 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 1.5rem;
+            margin: 0;
+        }
+
+        .tracker-card {
+            background: rgba(22, 38, 58, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(90, 170, 255, 0.25);
+            border-radius: 2.5rem;
+            padding: 2.25rem 2rem;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 30px 45px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(120, 200, 255, 0.1) inset;
+            transition: all 0.2s ease;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #e3f0ff;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.4rem;
+        }
+
+        h1 span {
+            background: #1e90ff;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 15px #1e90ff, 0 0 6px #a0d0ff;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .subhead {
+            color: #9bb8da;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            border-left: 3px solid #1e90ff;
+            padding-left: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .location-panel {
+            background: #0c1c2c;
+            border-radius: 1.8rem;
+            padding: 1.6rem 1.5rem;
+            border: 1px solid #2e4b6e;
+            box-shadow: inset 0 5px 8px rgba(0, 0, 0, 0.5), 0 5px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .coord-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid #203a52;
+        }
+
+        .coord-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 500;
+            color: #88b0dd;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .value {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #b7e2ff;
+            background: #04121f;
+            padding: 0.2rem 0.9rem;
+            border-radius: 40px;
+            border: 1px solid #2e5a7c;
+            letter-spacing: 0.5px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+
+        .value.small {
+            font-size: 1.1rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #112a3b;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            color: #9cd0ff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid #1e4970;
+            backdrop-filter: blur(4px);
+            margin-top: 0.5rem;
+        }
+
+        .status-badge.loading {
+            background: #253b4b;
+            color: #b0c8dd;
+            border-color: #3e5e7a;
+        }
+
+        .status-badge.error {
+            background: #3f1e1e;
+            color: #ffb0b0;
+            border-color: #a04545;
+        }
+
+        .status-badge.success {
+            background: #133e2e;
+            color: #a0f0cf;
+            border-color: #2b8b5c;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            background: #1e3b57;
+            border: none;
+            border-radius: 3rem;
+            padding: 0.9rem 1.6rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #e1efff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex: 1 1 auto;
+            border: 1px solid #2d6088;
+            box-shadow: 0 6px 0 #0a1622, 0 6px 12px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            background: #25547a;
+            border-color: #3e8ac0;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #0a1622, 0 10px 18px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #0a1622, 0 6px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn.secondary {
+            background: #162f42;
+            border-color: #325d7a;
+            box-shadow: 0 4px 0 #0a1622, 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn.secondary:hover {
+            background: #1f405a;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            transform: translateY(0);
+            box-shadow: 0 4px 0 #0a1622, 0 4px 10px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        .btn-icon {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .message-box {
+            background: #08212e;
+            border-radius: 1.2rem;
+            padding: 0.9rem 1.2rem;
+            font-size: 0.9rem;
+            color: #b0d4f0;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border-left: 6px solid #1e90ff;
+            margin-top: 1.2rem;
+            word-break: break-word;
+            transition: all 0.2s;
+        }
+
+        .message-box.hidden {
+            display: none;
+        }
+
+        .coords-extra {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #7fa5c7;
+            margin-top: 0.8rem;
+            padding: 0.3rem 0.4rem;
+            background: #0b1f2e;
+            border-radius: 30px;
+            padding: 0.6rem 1rem;
+        }
+
+        .footer-note {
+            font-size: 0.78rem;
+            text-align: center;
+            color: #55738f;
+            margin-top: 1.2rem;
+            letter-spacing: 0.3px;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="tracker-card">
+        <h1>
+            <span></span> location tracker
+        </h1>
+        <div class="subhead">live geolocation · latitude · longitude · accuracy</div>
+
+        <!-- main coordinates display -->
+        <div class="location-panel">
+            <div class="coord-row">
+                <span class="label">📍 Latitude</span>
+                <span class="value" id="latValue">—</span>
+            </div>
+            <div class="coord-row">
+                <span class="label">📍 Longitude</span>
+                <span class="value" id="lngValue">—</span>
+            </div>
+            <div class="coord-row">
+                <span class="label">🎯 Accuracy</span>
+                <span class="value small" id="accValue">—</span>
+            </div>
+        </div>
+
+        <!-- extra info row (altitude, heading, speed) -->
+        <div class="coords-extra" id="extraInfo">
+            <span>⛰️ alt: —</span>
+            <span>🧭 head: —</span>
+            <span>🏃 speed: —</span>
+        </div>
+
+        <!-- status indicator + last update -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem;">
+            <div class="status-badge" id="statusBadge">
+                <span>⏳</span> ready
+            </div>
+            <div class="status-badge" id="updateBadge" style="background: #0d1f30;">
+                <span>🕒</span> <span id="lastUpdate">never</span>
+            </div>
+        </div>
+
+        <!-- buttons -->
+        <div class="button-group">
+            <button class="btn" id="trackBtn">
+                <span class="btn-icon">📡</span> Track location
+            </button>
+            <button class="btn secondary" id="stopBtn" disabled>
+                <span class="btn-icon">⏹️</span> Stop
+            </button>
+        </div>
+
+        <!-- optional message / error box -->
+        <div class="message-box hidden" id="messageBox">
+            <span>ℹ️</span> <span id="messageText"></span>
+        </div>
+
+        <div class="footer-note">
+            geolocation API · real-time updates
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // DOM elements
+            const latEl = document.getElementById('latValue');
+            const lngEl = document.getElementById('lngValue');
+            const accEl = document.getElementById('accValue');
+            const extraInfo = document.getElementById('extraInfo');
+
+            const statusBadge = document.getElementById('statusBadge');
+            const updateBadge = document.getElementById('updateBadge');
+            const lastUpdateSpan = document.getElementById('lastUpdate');
+
+            const trackBtn = document.getElementById('trackBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+
+            // watchId for geolocation
+            let watchId = null;
+
+            // helper: format coordinate with 6 decimals
+            function formatCoord(value) {
+                return (value !== null && value !== undefined) ? value.toFixed(6) : '—';
+            }
+
+            // helper: show message
+            function showMessage(text, isError = false, isSuccess = false) {
+                messageBox.classList.remove('hidden');
+                messageText.textContent = text;
+                messageBox.style.borderLeftColor = isError ? '#ff6b6b' : (isSuccess ? '#4cd964' : '#1e90ff');
+            }
+
+            function hideMessage() {
+                messageBox.classList.add('hidden');
+            }
+
+            // update status badge
+            function setStatus(text, type = 'default') {
+                const badge = statusBadge;
+                // icons
+                const icons = {
+                    default: '⏳',
+                    loading: '📡',
+                    error: '⚠️',
+                    success: '✅'
+                };
+                const icon = icons[type] || icons.default;
+                badge.innerHTML = `<span>${icon}</span> ${text}`;
+                badge.className = 'status-badge'; // reset
+                if (type === 'loading') badge.classList.add('loading');
+                if (type === 'error') badge.classList.add('error');
+                if (type === 'success') badge.classList.add('success');
+            }
+
+            // update last update time
+            function setLastUpdate() {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                lastUpdateSpan.textContent = timeStr;
+            }
+
+            // reset all values to placeholder
+            function resetDisplay() {
+                latEl.textContent = '—';
+                lngEl.textContent = '—';
+                accEl.textContent = '—';
+                extraInfo.innerHTML = `<span>⛰️ alt: —</span><span>🧭 head: —</span><span>🏃 speed: —</span>`;
+                lastUpdateSpan.textContent = 'never';
+            }
+
+            // update UI with position
+            function updatePosition(position) {
+                const coords = position.coords;
+
+                // primary coords
+                latEl.textContent = formatCoord(coords.latitude);
+                lngEl.textContent = formatCoord(coords.longitude);
+                accEl.textContent = coords.accuracy ? `${coords.accuracy.toFixed(1)} m` : '—';
+
+                // extra info
+                const altitude = (coords.altitude !== null && coords.altitude !== undefined) 
+                    ? `${coords.altitude.toFixed(1)} m` 
+                    : '—';
+                const heading = (coords.heading !== null && coords.heading !== undefined) 
+                    ? `${coords.heading.toFixed(1)}°` 
+                    : '—';
+                const speed = (coords.speed !== null && coords.speed !== undefined) 
+                    ? `${(coords.speed * 3.6).toFixed(1)} km/h`   // convert m/s to km/h
+                    : '—';
+
+                extraInfo.innerHTML = `
+                    <span>⛰️ alt: ${altitude}</span>
+                    <span>🧭 head: ${heading}</span>
+                    <span>🏃 speed: ${speed}</span>
+                `;
+
+                // update time
+                setLastUpdate();
+
+                // status: we got a position
+                setStatus('active', 'success');
+                // hide any error messages
+                hideMessage();
+            }
+
+            // error handler
+            function handlePositionError(error) {
+                let errorMsg = '';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg = 'User denied the request for geolocation.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg = 'Location information is unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg = 'The request to get user location timed out.';
+                        break;
+                    default:
+                        errorMsg = 'An unknown error occurred.';
+                        break;
+                }
+
+                setStatus('error', 'error');
+                showMessage(`❌ ${errorMsg}`, true);
+                // keep last known values, but no update time change
+                // if we're not watching, we don't need to stop (but ensure stop if watch active)
+                if (watchId !== null) {
+                    // we still keep watching? but typically if permission denied, we should stop.
+                    // It's better to stop watching on permission denied.
+                    if (error.code === error.PERMISSION_DENIED) {
+                        stopTracking();
+                        showMessage('❌ Permission denied. Tracking stopped.', true);
+                    }
+                }
+            }
+
+            // start tracking
+            function startTracking() {
+                if (!navigator.geolocation) {
+                    setStatus('unsupported', 'error');
+                    showMessage('Geolocation is not supported by your browser.', true);
+                    return;
+                }
+
+                // stop any existing watch
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+
+                // UI state: loading
+                setStatus('locating...', 'loading');
+                hideMessage();
+                // disable track button, enable stop
+                trackBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                // reset display? we keep previous until new data arrives, but we can show loading indicator.
+                // optionally set lat/lng to '—' with loading? but we keep previous values if any.
+                // better to keep previous, but accuracy may be stale. fine.
+
+                // start watching position
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        updatePosition(position);
+                        // ensure UI buttons are correct (if we came from error)
+                        trackBtn.disabled = true;
+                        stopBtn.disabled = false;
+                    },
+                    (error) => {
+                        handlePositionError(error);
+                        // in case of error, if watchId is still active but permission denied etc, stop button stays active.
+                        // but if watch was cleared inside handle, we need to sync.
+                        if (watchId === null) {
+                            trackBtn.disabled = false;
+                            stopBtn.disabled = true;
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+
+                // also show a subtle message
+                showMessage('📡 Requesting location permission...', false);
+            }
+
+            // stop tracking
+            function stopTracking() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                // UI state
+                setStatus('stopped', 'default');
+                trackBtn.disabled = false;
+                stopBtn.disabled = true;
+                // don't clear values, but show that it's stopped
+                hideMessage();
+                // optionally show a brief message
+                showMessage('⏸️ Location tracking stopped.', false);
+                // update status badge to idle
+                setStatus('idle', 'default');
+            }
+
+            // clear / reset (could be used if needed, but not exposed)
+            // we don't have a reset button, but we can keep for internal use
+
+            // attach event listeners
+            trackBtn.addEventListener('click', startTracking);
+            stopBtn.addEventListener('click', stopTracking);
+
+            // initial: check geolocation support
+            if (!navigator.geolocation) {
+                setStatus('unsupported', 'error');
+                showMessage('Geolocation is not supported by your browser.', true);
+                trackBtn.disabled = true;
+                stopBtn.disabled = true;
+            } else {
+                // set initial idle state
+                setStatus('ready', 'default');
+                // set last update as never
+                lastUpdateSpan.textContent = 'never';
+                // disable stop button initially
+                stopBtn.disabled = true;
+                // show a tiny welcome message (optional)
+                // but no message box, to keep clean
+            }
+
+            // small extra: if permission already granted, could auto-start? but we don't.
+            // ensure that the status badge shows "ready"
+            // also note: if user leaves page, watch is cleared automatically by browser, but we can clean up
+            window.addEventListener('beforeunload', function() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
